@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能知识库系统</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #3b82f6;
+            --background: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --danger-color: #dc2626;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--background);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .header {
+            text-align: center;
+            padding: 1rem;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: white;
+            box-shadow: 1px 0 3px rgba(0, 0, 0, 0.05);
+            padding: 2rem 1rem 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-bottom: 1rem;
+            scroll-behavior: smooth;
+            overflow-anchor:none;
+        }
+
+        .chat-bubble {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
+            white-space: pre-wrap;      /* 新增，保留换行和空格 */
+            word-break: break-word;     /* 防止长单词撑破布局 */
+        }
+
+        .chat-bubble.user {
+            align-self: flex-end;
+            background-color: #dbeafe;
+            color: #1e3a8a;
+            border-bottom-right-radius: 0;
+        }
+
+        .chat-bubble.system {
+            align-self: flex-start;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            border-bottom-left-radius: 0;
+        }
+
+        .chat-input-form {
+            display: flex;
+            padding: 0.5rem;
+            background: white;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            resize: none;
+            margin-right: 0.5rem;
+            height: 2.5rem;
+        }
+
+        .button {
+            background: var(--primary-color);
+            color: white;
+            padding: 0 1rem;
+            border: none;
+            border-radius: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .button:hover {
+            background: var(--secondary-color);
+        }
+
+        /* 文件上传样式 */
+        .upload-section {
+            border: 2px dashed #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s;
+            text-align: center;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary-color);
+        }
+
+        .file-upload {
+            display: block;
+            cursor: pointer;
+        }
+
+        .upload-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            padding: 1rem;
+        }
+
+        .upload-prompt svg {
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* 文档列表样式 */
+        .document-list {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .doc-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .document-grid {
+            overflow-y: auto;
+            max-height: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* 滑动删除效果 */
+        .document-item {
+            position: relative;
+            overflow: hidden;
+            padding-right: 100px;
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .delete-form {
+            position: absolute;
+            right: -90px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: right 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            background: linear-gradient(to left, white 60%, rgba(255,255,255,0));
+            padding-left: 30px;
+        }
+
+        .document-item:hover .delete-form {
+            right: 8px;
+        }
+
+        .doc-name {
+            transition: transform 0.3s;
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .document-item:hover .doc-name {
+            transform: translateX(-10px);
+        }
+
+        /* 删除按钮样式 */
+        .delete-btn {
+            position: relative;
+            padding: 6px 12px;
+            background: #fee2e2;
+            color: var(--danger-color);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .delete-btn::before {
+            content: "×";
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #fecaca;
+            color: #b91c1c;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+        }
+
+        .delete-btn:hover::before {
+            transform: rotate(45deg) scale(1.2);
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+        to { transform: rotate(360deg); }
+        }
+        .spinner {
+        display: inline-block;
+        animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📚 智能知识库</h1>
+    </div>
+    
+    <div class="main">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <form action="/upload" method="post" enctype="multipart/form-data" class="upload-form">
+                <div class="upload-section">
+                    <label class="file-upload">
+                        <input type="file" name="file" accept=".pdf" required>
+                        <div class="upload-prompt">
+                            <!-- SVG 图标 -->
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <span>点击选择PDF文件或拖放至此</span>
+                        </div>
+                    </label>
+                    <button type="submit" class="button">上传</button>
+                </div>
+            </form>
+
+            <div class="document-list">
+                <div class="doc-title">📁 已存文档（滑动显示删除）</div>
+                <div class="document-grid">
+                    {% for doc in documents %}
+                    <div class="document-item">
+                        <span class="doc-name">{{ doc }}</span>
+                        <form action="/delete" method="post" class="delete-form">
+                            <input type="hidden" name="filename" value="{{ doc }}">
+                            <button type="submit" class="delete-btn">
+                                <span>删除</span>
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 聊天区域 -->
+        <div class="chat-section">
+            <div class="chat-container">
+                {% for entry in chat_history %}
+                <div class="chat-bubble {{ entry.role }}">{{ entry.content }}</div>
+                {% endfor %}
+            </div>
+            <form class="chat-input-form">
+                <textarea class="chat-input" name="question" placeholder="输入消息..." required></textarea>
+                <button type="submit" class="button">发送</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    const fileInput = document.querySelector('input[type="file"]');
+    fileInput.addEventListener('change', function(e) {
+      const promptSpan = document.querySelector('.upload-prompt span');
+      promptSpan.textContent = e.target.files[0]?.name || '点击选择PDF文件或拖放至此';
+      promptSpan.style.fontWeight = e.target.files[0] ? 'bold' : 'normal';
+    });
+
+    // 上传反馈处理
+    document.querySelector('.upload-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const form = e.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '上传中 <span class="spinner">⏳</span>';
+      
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: new FormData(form)
+        });
+        
+        if(response.ok) {
+          submitBtn.innerHTML = '✓ 上传成功';
+          location.reload();
+          setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            fileInput.value = '';
+            document.querySelector('.upload-prompt span').textContent = '点击选择PDF文件或拖放至此';
+          }, 2000);
+        } else {
+          throw new Error('上传失败');
+        }
+      } catch (err) {
+        submitBtn.innerHTML = '❌ 上传失败';
+        setTimeout(() => {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+        }, 2000);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatForm = document.querySelector('.chat-input-form');
+        const chatInput = document.querySelector('.chat-input');
+        const chatContainer = document.querySelector('.chat-container');
+       
+        const savedScrollPos = sessionStorage.getItem('chatScrollPos');
+    if (savedScrollPos) {
+        chatContainer.scrollTop = savedScrollPos;
+        sessionStorage.removeItem('chatScrollPos');
+    }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const question = chatInput.value.trim();
+            if (!question) return;
+
+            chatInput.value = '';
+
+            const userBubble = document.createElement('div');
+            userBubble.className = 'chat-bubble user';
+            userBubble.textContent = question;
+            chatContainer.appendChild(userBubble);
+
+            const systemBubble = document.createElement('div');
+            systemBubble.className = 'chat-bubble system';
+            systemBubble.textContent = '正在思考...';
+            chatContainer.appendChild(systemBubble);
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+
+                const data = await response.json();
+                systemBubble.textContent = data.answer || '系统未返回回答';
+            } catch (err) {
+                systemBubble.textContent = '❌ 获取回答失败，请重试';
+                console.error(err);
+            }
+        });
+        window.addEventListener('beforeunload', () => {
+        sessionStorage.setItem('chatScrollPos', chatContainer.scrollTop);
+    });
+    });
+    
+    </script>
+</body>
+</html>
