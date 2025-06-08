@@ -298,10 +298,14 @@ class RAGSystem:
     
         prompt = ChatPromptTemplate.from_messages([
         ("system", 
-         """你是专业问答助手，可参考的上下文资料：{context}"""),
+         """你是专业问答助手，请根据问题判断是否需要借鉴参考资料，
+         如果涉及专业知识、法律知识请务必参考上下文资料，
+         如果是日常问答则不需要参考资料，
+         如果不需要借鉴参考资料则直接回答，
+         如果需要借鉴参考资料，可参考的上下文资料：{context}"""),
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", 
-         """请分析以下问题并提供专业解答：{input}"""),
+         """根据问题提供精炼的（中文）回答：{input}"""),
     ])
         return (
              {
@@ -317,20 +321,17 @@ class RAGSystem:
     # --------------------- 核心查询接口 ---------------------
     def query(self, query: str) -> str:
         try:
-            #1. 先执行检索获取相关文档
-            retrieved_docs = self.retriever.get_relevant_documents(query)
-            # 打印检索到的文档信息（调试用）
-            print("\n=== 检索到的文档 ===")
-            for i, doc in enumerate(retrieved_docs):
-                print(f"\n文档 {i+1}:")
-                print(f"- 来源: {doc.metadata.get('source', '未知')}")
-                print(f"- 内容预览: {doc.page_content}")
+            # #1. 先执行检索获取相关文档
+            # retrieved_docs = self.retriever.get_relevant_documents(query)
+            # # 打印检索到的文档信息（调试用）
+            # print("\n=== 检索到的文档 ===")
+            # for i, doc in enumerate(retrieved_docs):
+            #     print(f"\n文档 {i+1}:")
+            #     print(f"- 来源: {doc.metadata.get('source', '未知')}")
+            #     print(f"- 内容预览: {doc.page_content}")
             #2. 使用RAG链生成最终回答
             response = self.rag_chain.invoke(query)
             #response=""
-            response= re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
-            response = re.sub(r'\n{2,}', '\n', response)
-
             self.memory.save_context(
             {"input": query},
             {"output": response}
