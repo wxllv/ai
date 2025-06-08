@@ -1,7 +1,13 @@
 本项目是基于langchain开发的大模型agent+rag系统
+
 rag+agent+search是调用讯飞星火的api接口调用deepseek大模型
+
 rag—local是基于ollama本地部署大模型，并实现rag
+
 支持本地上传pdf文件，进行大模型的数据增强，初始化时将文档放入null知识库即可
+
 其中search文件和Googlesearch是供agent使用的实时搜索工具
+
 文本ocr是基于paddleocr的文本扫描，用于扫描pdf文档
+
 models是所使用的词嵌入模型
