@@ -290,25 +290,13 @@ class RAGSystem:
     
         prompt = ChatPromptTemplate.from_messages([
         ("system", 
-         """你是专业问答助手，请严格遵循以下规则：
-     1. 必须参考之前的对话历史
-     2. 回答需与历史对话保持逻辑连贯
-     3. 当前对话历史：{chat_history}
-     ---
-     问题：{input}
-     上下文：{context}"""),
-        
+         """你是专业问答助手，请根据问题判断是否需要借鉴参考资料，
+         如果涉及专业知识、法律知识请务必参考上下文资料，
+         如果需要借鉴参考资料，可参考的上下文资料：{context}"""),
         MessagesPlaceholder(variable_name="chat_history"),
-        
         ("human", 
-         """请分析以下问题并提供专业解答：
-[问题] {input}"""),
-        
-        ("human", 
-         """可参考的上下文资料：
-{context}""")
+         """根据问题提供精炼的（中文）回答：{input}"""),
     ])
-    
         return (
              {
         "context": self.retriever, 
